@@ -1,0 +1,139 @@
+@startuml
+title SmartBudget - Diagram A (Transactions: FR1 + FR2 / UC-1, UC-2, UC-3)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam ranksep 120
+
+package "UI Layer (Controller)" as UI {
+  class TransactionsController {
+    - transactionService : TransactionService
+    - alertService : AlertService
+    --
+    + initialize() : void
+    + onAddTransaction() : void
+    + onEditTransaction(selectedId: UUID) : void
+    + onDeleteTransaction(selectedId: UUID) : void
+    + onApplyFilters() : void
+    + onClearFilters() : void
+    + onSearch(keyword: String) : void
+    + refreshTable() : void
+  }
+}
+
+package "Service Layer (Business Logic)\n" as SVC {
+  class TransactionService {
+    - storage : Storage
+    - validator : Validator
+    - cache : List<Transaction>
+    --
+    + loadOnStartup() : void
+    + getAll() : List<Transaction>
+    + add(tx: Transaction) : Transaction
+    + update(tx: Transaction) : Transaction
+    + delete(id: UUID) : void
+    + findById(id: UUID) : Transaction
+    + filter(criteria: TransactionFilter) : List<Transaction>
+    + persist() : void
+  }
+
+  ' Included because overspending can be checked after add/edit,
+  ' but kept minimal here (full details in the Budget/Alerts diagram).
+  class AlertService {
+    + checkOverspendingFor(tx: Transaction) : void
+  }
+}
+
+package "Domain Model (Entities + DTO)\n" as DOMAIN {
+
+  enum Category {
+    FOOD_AND_DINING
+    TRANSPORTATION
+    BILLS_AND_UTILITIES
+    SHOPPING
+    ENTERTAINMENT
+    HEALTHCARE
+    OTHER
+  }
+
+  enum TransactionType {
+    INCOME
+    EXPENSE
+  }
+
+  class Transaction {
+    - id : UUID
+    - type : TransactionType
+    - amount : BigDecimal
+    - date : LocalDate
+    - category : Category
+    - note : String
+    --
+    + Transaction(id: UUID, type: TransactionType, amount: BigDecimal, date: LocalDate, category: Category, note: String)
+    + isIncome() : boolean
+    + isExpense() : boolean
+  }
+
+  class TransactionFilter {
+    - category : Category
+    - startDate : LocalDate
+    - endDate : LocalDate
+    - keyword : String
+    --
+    + TransactionFilter(category: Category, startDate: LocalDate, endDate: LocalDate, keyword: String)
+    + isEmpty() : boolean
+  }
+}
+
+package "Persistence Layer" as PERSIST {
+  interface Storage {
+    + loadTransactions() : List<Transaction>
+    + saveTransactions(txs: List<Transaction>) : void
+  }
+
+  class JsonStorage {
+    - transactionsPath : Path
+    --
+    + JsonStorage(transactionsPath: Path)
+    + loadTransactions() : List<Transaction>
+    + saveTransactions(txs: List<Transaction>) : void
+  }
+}
+
+package "Shared Utility" as UTIL {
+  class Validator {
+    + validateTransaction(tx: Transaction) : void
+    + requireNotBlank(value: String, fieldName: String) : void
+    + requirePositive(amount: BigDecimal, fieldName: String) : void
+    + requireDate(date: LocalDate, fieldName: String) : void
+  }
+}
+
+' -------------------------
+' Relationships / Dependencies
+' -------------------------
+
+' Controller talks to services only (MVC)
+TransactionsController ..> TransactionService : calls
+TransactionsController ..> AlertService : triggers check\n(after add/edit)
+note on link
+checkOverspendingFor(tx) delegates to
+checkBudgetStatus(category, month) (Diagram B)
+end note
+
+' Service owns business rules and persistence
+TransactionService o-- "0..*" Transaction : cache
+TransactionService ..> TransactionFilter : uses for filtering
+TransactionService ..> Storage : load/save
+TransactionService ..> Validator : validation
+
+' Persistence implementation
+JsonStorage ..|> Storage : implements
+Storage ..> Transaction : stores
+
+' Associations requested for clarity
+Transaction --> Category : category
+Transaction --> TransactionType : type
+
+@enduml
