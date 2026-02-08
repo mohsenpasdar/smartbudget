@@ -32,7 +32,12 @@ else valid input
 
   ' Optional: check overspending after expense add
   TC -> AS : checkOverspendingFor(createdTx)
-  AS --> TC : (maybe) alert info
+  AS --> TC : Optional<OverspendingAlert>
+
+  alt alert returned
+    TC --> User : show overspending alert
+  else no alert
+  end
 
   TC -> TC : refreshTable()
   TC --> User : show success + updated totals

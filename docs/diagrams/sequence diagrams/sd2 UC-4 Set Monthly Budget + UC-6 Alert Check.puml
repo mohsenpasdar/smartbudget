@@ -10,14 +10,14 @@ participant "AlertService" as AS
 participant "TransactionService" as TS
 
 == UC-4: User sets or updates a monthly budget ==
-User -> BC : onSetOrUpdateBudget(category, limit)
+User -> BC : onUpsertBudget(category, limit)
 activate BC
 
 ' Controller decides which month this budget applies to (typically current month)
 BC -> BC : month = YearMonth.now()
 BC -> BC : budget = new Budget(category, month, limit)
 
-BC -> BS : setBudget(budget)
+BC -> BS : upsertBudget(budget)
 activate BS
 
 ' BudgetService validates inputs using Validator (per Diagram B)
@@ -56,11 +56,12 @@ else Valid budget
   AS -> TS : getExpensesForCategoryAndMonth(category, month)
   TS --> AS : spentAmount
 
-  AS -> AS : compute status (OK/REACHED/EXCEEDED)\ncreate OverspendingAlert
-  AS --> BC : OverspendingAlert
+  AS -> AS : if spentAmount == limit -> REACHED\nelse if spentAmount > limit -> EXCEEDED\nelse OK
+  AS -> AS : create OverspendingAlert
+  AS --> BC : Optional<OverspendingAlert>
   deactivate AS
 
-  alt alert.isTriggered() == true (REACHED or EXCEEDED)
+  alt alert returned (REACHED or EXCEEDED)
     BC --> User : show overspending alert (status, overBy)
   else status == OK
     BC --> User : show budget saved + remaining amount
