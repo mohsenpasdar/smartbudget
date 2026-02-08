@@ -4,7 +4,7 @@ title SmartBudget - Layer Diagram
 skinparam componentStyle rectangle
 skinparam packageStyle rectangle
 skinparam linetype line
-skinparam ranksep 150
+skinparam ranksep 30
 
 package "\nUI Layer (View + Controller)" as UI {
   [Views] as Views
@@ -13,6 +13,7 @@ package "\nUI Layer (View + Controller)" as UI {
   [BudgetsController] as BudCtrl
   [ReportsController] as RepCtrl
   [NavigationController] as NavCtrl
+  [StartupController] as StartCtrl
 }
 
 package "\nApplication / Service Layer\n(Model - Business Logic)" as SVC {
@@ -50,6 +51,9 @@ RepCtrl --> RepSvc : reports & charts
 NavCtrl --> TxCtrl : navigate
 NavCtrl --> BudCtrl : navigate
 NavCtrl --> RepCtrl : navigate
+
+StartCtrl --> Storage : load transactions/budgets
+StartCtrl --> NavCtrl : start app
 
 Views --> TxCtrl : events/bindings
 Views --> BudCtrl
