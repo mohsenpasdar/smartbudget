@@ -36,8 +36,9 @@ partition "User" {
 
 repeat
   partition "BudgetsController (UI)" {
-    :Build Budget object\n(category, monthlyLimit, month/year context);
-    :Call BudgetService.createOrUpdate(budget);
+    :Set month = YearMonth.now();
+    :Build Budget object\n(category, monthlyLimit, month);
+    :Call BudgetService.upsertBudget(budget);
   }
 
   partition "BudgetService" {
@@ -71,12 +72,12 @@ partition "Storage" {
 
 ' --- Check overspending after budget is set (UC-6 embedded) ---
 partition "BudgetsController (UI)" {
-  :Call AlertService.checkOverspendingForBudget(budget);
+  :Call AlertService.checkBudgetStatus(budget.category, month);
 }
 
 partition "AlertService" {
   :Get current month spending\nfor budget.category;
-  if (Spending > monthlyLimit?) then (yes)
+  if (Spending >= monthlyLimit?) then (yes)
     :Prepare overspending warning\n(details for UI);
   else (no)
     :No warning needed;
@@ -87,7 +88,7 @@ partition "BudgetsController (UI)" {
   :Close "Create Budget" modal;
   :Refresh budgets cards/list\n(spent, limit, progress bar);
 
-  if (Spending > monthlyLimit?) then (yes)
+  if (Spending >= monthlyLimit?) then (yes)
     :Display overspending warning\n(e.g., banner on card:\n"You've exceeded your limit");
   endif
 

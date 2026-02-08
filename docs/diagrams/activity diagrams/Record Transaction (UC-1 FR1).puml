@@ -70,18 +70,9 @@ partition "Storage" {
 ' --- UC-6 embedded: overspending alert after save (expense only) ---
 partition "TransactionsController (UI)" {
   if (tx.isExpense()?) then (yes)
-    :Call AlertService.checkOverspendingFor(tx);
+    :Call AlertService.checkOverspendingFor(tx)\n-> alert (optional);
 
-    partition "AlertService" {
-      :Check budget for category/month;
-      if (Overspending detected?) then (yes)
-        :Prepare alert details;
-      else (no)
-        :No alert needed;
-      endif
-    }
-
-    if (Overspending detected?) then (yes)
+    if (alert returned?) then (yes)
       :Display overspending alert popup/banner;
       partition "User" {
         :Acknowledge / dismiss alert;
