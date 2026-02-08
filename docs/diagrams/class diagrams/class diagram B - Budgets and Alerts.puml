@@ -13,7 +13,7 @@ package "UI Layer (Controller)" as UI {
     - transactionService : TransactionService
     --
     + initialize() : void
-    + onSetOrUpdateBudget(category: Category, limit: BigDecimal) : void
+    + onUpsertBudget(category: Category, limit: BigDecimal) : void
     + onEditBudget(category: Category, newLimit: BigDecimal) : void
     + refreshBudgetsView() : void
     + showAlertIfNeeded(category: Category) : void
@@ -30,8 +30,7 @@ package "Service Layer (Business Logic)\n" as SVC {
     + getAllBudgets() : List<Budget>
     + getBudgetsForMonth(month: YearMonth) : List<Budget>
     + getBudget(category: Category, month: YearMonth) : Budget
-    + setBudget(budget: Budget) : Budget
-    + updateBudget(budget: Budget) : Budget
+    + upsertBudget(budget: Budget) : Budget
     + deleteBudget(category: Category, month: YearMonth) : void
     + persist() : void
   }
@@ -40,7 +39,7 @@ package "Service Layer (Business Logic)\n" as SVC {
     - budgetService : BudgetService
     - transactionService : TransactionService
     --
-    + checkBudgetStatus(category: Category, month: YearMonth) : OverspendingAlert
+    + checkBudgetStatus(category: Category, month: YearMonth) : Optional<OverspendingAlert>
     + checkAllBudgets(month: YearMonth) : List<OverspendingAlert>
   }
 
@@ -109,6 +108,7 @@ package "Persistence Layer" as PERSIST {
     + loadBudgets() : List<Budget>
     + saveBudgets(budgets: List<Budget>) : void
     + loadTransactions() : List<Transaction>
+    + saveTransactions(txs: List<Transaction>) : void
   }
 
   class JsonStorage {
@@ -119,6 +119,7 @@ package "Persistence Layer" as PERSIST {
     + loadBudgets() : List<Budget>
     + saveBudgets(budgets: List<Budget>) : void
     + loadTransactions() : List<Transaction>
+    + saveTransactions(txs: List<Transaction>) : void
   }
 }
 

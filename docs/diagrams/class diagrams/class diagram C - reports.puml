@@ -123,6 +123,9 @@ package "\nDomain Model (Entities + Results)" as DOMAIN {
     - hasData : boolean
     - message : String
   }
+
+  ' Minimal placeholder referenced by Storage (full details in Diagram B)
+  class Budget
 }
 
 ' =========================================================
@@ -132,13 +135,18 @@ package "Persistence Layer" as PERSIST {
   interface Storage {
     + loadTransactions() : List<Transaction>
     + saveTransactions(txs: List<Transaction>) : void
+    + loadBudgets() : List<Budget>
+    + saveBudgets(budgets: List<Budget>) : void
   }
 
   class JsonStorage {
     - transactionsPath : Path
+    - budgetsPath : Path
     --
     + loadTransactions() : List<Transaction>
     + saveTransactions(txs: List<Transaction>) : void
+    + loadBudgets() : List<Budget>
+    + saveBudgets(budgets: List<Budget>) : void
   }
 }
 
@@ -174,6 +182,7 @@ TransactionService ..> PeriodRange : filter by date range
 TransactionService ..> Storage : load/save
 JsonStorage ..|> Storage : implements
 Storage ..> Transaction : stores
+Storage ..> Budget : stores
 
 ' Associations for clarity
 Transaction --> Category : category

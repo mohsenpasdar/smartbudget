@@ -3,14 +3,14 @@ title SmartBudget - Overview UML (High-Level Architecture)
 
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
-skinparam ranksep 150
-
+skinparam ranksep 20
 
 package "\nUI Layer (JavaFX Controllers)" as UI {
   class TransactionsController
   class BudgetsController
   class ReportsController
   class NavigationController
+  class StartupController
 }
 
 package "\nService Layer (Business Logic)" as SVC {
@@ -45,6 +45,9 @@ ReportsController ..> ReportService : generate reports
 NavigationController ..> TransactionsController : navigate
 NavigationController ..> BudgetsController : navigate
 NavigationController ..> ReportsController : navigate
+
+StartupController ..> Storage : load transactions/budgets
+StartupController ..> NavigationController : start app
 
 ' -------------------------
 ' Service -> Service (indirect storage access)
