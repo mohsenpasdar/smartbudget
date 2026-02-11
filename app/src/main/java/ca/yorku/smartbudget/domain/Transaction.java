@@ -16,7 +16,7 @@ public class Transaction {
     public Transaction() {
     }
 
-    // Full constructor: caller provides everything
+    // Full constructor: the caller provides everything
     public Transaction(UUID id,
                        TransactionType type,
                        BigDecimal amount,
