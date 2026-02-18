@@ -23,7 +23,6 @@ package "UI Layer (Controller)" as UI {
 package "Service Layer (Business Logic)\n" as SVC {
   class BudgetService {
     - storage : Storage
-    - validator : Validator
     - cache : List<Budget>
     --
     + loadOnStartup() : void
@@ -124,10 +123,10 @@ package "Persistence Layer" as PERSIST {
 }
 
 package "Shared Utility" as UTIL {
-  class Validator {
-    + validateBudget(budget: Budget) : void
-    + requireNotBlank(value: String, fieldName: String) : void
-    + requirePositive(amount: BigDecimal, fieldName: String) : void
+  class Validator <<utility>> {
+    {static} + validateBudget(budget: Budget) : void
+    {static} + requireNotBlank(value: String, fieldName: String) : void
+    {static} + requirePositive(amount: BigDecimal, fieldName: String) : void
   }
 }
 
@@ -143,7 +142,7 @@ BudgetsController ..> TransactionService : refresh spending\n(for remaining)
 ' Services and their responsibilities
 BudgetService o-- "0..*" Budget : cache
 BudgetService ..> Storage : load/save budgets
-BudgetService ..> Validator : validate inputs
+BudgetService ..> Validator : validate inputs (static)
 
 TransactionService ..> Storage : read transactions
 TransactionService ..> Transaction : returns/reads

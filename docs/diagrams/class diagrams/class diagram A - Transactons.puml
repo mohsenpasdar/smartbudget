@@ -25,7 +25,6 @@ package "UI Layer (Controller)" as UI {
 package "Service Layer (Business Logic)\n" as SVC {
   class TransactionService {
     - storage : Storage
-    - validator : Validator
     - cache : List<Transaction>
     --
     + loadOnStartup() : void
@@ -112,11 +111,11 @@ package "Persistence Layer" as PERSIST {
 }
 
 package "Shared Utility" as UTIL {
-  class Validator {
-    + validateTransaction(tx: Transaction) : void
-    + requireNotBlank(value: String, fieldName: String) : void
-    + requirePositive(amount: BigDecimal, fieldName: String) : void
-    + requireDate(date: LocalDate, fieldName: String) : void
+  class Validator <<utility>> {
+    {static} + validateTransaction(tx: Transaction) : void
+    {static} + requireNotBlank(value: String, fieldName: String) : void
+    {static} + requirePositive(amount: BigDecimal, fieldName: String) : void
+    {static} + requireDate(date: LocalDate, fieldName: String) : void
   }
 }
 
@@ -136,7 +135,7 @@ end note
 TransactionService o-- "0..*" Transaction : cache
 TransactionService ..> TransactionFilter : uses for filtering
 TransactionService ..> Storage : load/save
-TransactionService ..> Validator : validation
+TransactionService ..> Validator : validation (static)
 
 ' Persistence implementation
 JsonStorage ..|> Storage : implements
