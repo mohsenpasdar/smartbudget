@@ -5,10 +5,12 @@ import ca.yorku.smartbudget.domain.TransactionFilter;
 import ca.yorku.smartbudget.persistence.Storage;
 import ca.yorku.smartbudget.util.Validator;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class TransactionServiceImpl implements TransactionService {
     private Storage storage;
@@ -48,27 +50,121 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public Transaction update(Transaction tx) {
-        throw new UnsupportedOperationException("TODO Step 2.3");
+    public Transaction update(Transaction updatedTx) {
+        Objects.requireNonNull(updatedTx, "tx must not be null");
+        if (updatedTx.getId() == null) {
+            throw new IllegalArgumentException("Transaction ID is required for update.");
+        }
+
+        // Validate the transaction (throws if invalid)
+        Validator.validateTransaction(updatedTx);
+
+        int idx = indexOfId(updatedTx.getId());
+        if (idx == -1) {
+            throw new IllegalArgumentException("Transaction with ID " + updatedTx.getId() + " not found.");
+        }
+
+        cache.set(idx, updatedTx);
+        persist();
+        return updatedTx;
     }
 
     @Override
     public void delete(UUID id) {
-        throw new UnsupportedOperationException("TODO Step 2.3");
+        Objects.requireNonNull(id, "id must not be null");
+
+        int idx = indexOfId(id);
+        if (idx == -1) {
+            throw new IllegalArgumentException("Transaction with ID " + id + " not found.");
+        }
+
+        cache.remove(idx);
+        persist();
     }
 
     @Override
     public Transaction getById(UUID id) {
-        throw new UnsupportedOperationException("TODO Step 2.3");
+        Objects.requireNonNull(id, "id must not be null");
+
+        int idx = indexOfId(id);
+        if (idx == -1) {
+            throw new IllegalArgumentException("Transaction with ID " + id + " not found.");
+        }
+
+        return cache.get(idx);
     }
 
     @Override
     public List<Transaction> filter(TransactionFilter criteria) {
-        throw new UnsupportedOperationException("TODO Step 2.3");
+        if (criteria == null || criteria.isEmpty()) {
+            return getAll(); // no criteria means return all
+        }
+
+        final String keyword = normalize(criteria.getKeyword());
+        final LocalDate startDate = criteria.getStartDate();
+        final LocalDate endDate = criteria.getEndDate();
+
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("Start date must be on or before end date.");
+        }
+
+        List<Transaction> result = new ArrayList<>();
+        for (Transaction tx : cache) {
+            if (matchesKeyword(tx, keyword)
+                    && matchesCategory(tx, criteria)
+                    && matchesType(tx, criteria)
+                    && matchesDateRange(tx, startDate, endDate)) {
+                result.add(tx);
+            }
+        }
+        return result;
     }
 
     @Override
     public void persist() {
-        throw new UnsupportedOperationException("TODO Step 2.3");
+        storage.saveTransactions(new ArrayList<>(cache)); // defensive copy
+    }
+
+    // Helper methods
+    private int indexOfId(UUID id) {
+        for (int i = 0; i < cache.size(); i++) {
+            if (cache.get(i).getId().equals(id)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static String normalize(String s) {
+        return s == null ? "" : s.trim().toLowerCase();
+    }
+
+    private static boolean matchesKeyword(Transaction tx, String keyword) {
+        if (keyword.isEmpty()) {
+            return true;
+        }
+        return tx.getNote() != null && tx.getNote().toLowerCase().contains(keyword);
+    }
+
+    private static boolean matchesCategory(Transaction tx, TransactionFilter criteria) {
+        return criteria.getCategory() == null || criteria.getCategory().equals(tx.getCategory());
+    }
+
+    private static boolean matchesType(Transaction tx, TransactionFilter criteria) {
+        return criteria.getType() == null || criteria.getType().equals(tx.getType());
+    }
+
+    private static boolean matchesDateRange(Transaction tx, LocalDate startDate, LocalDate endDate) {
+        LocalDate date = tx.getDate();
+        if (date == null) {
+            return false; // should not happen if validation is correct
+        }
+        if (startDate != null && date.isBefore(startDate)) {
+            return false;
+        }
+        if (endDate != null && date.isAfter(endDate)) {
+            return false;
+        }
+        return true;
     }
 }
