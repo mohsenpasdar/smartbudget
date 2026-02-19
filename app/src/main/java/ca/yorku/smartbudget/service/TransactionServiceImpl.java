@@ -6,11 +6,7 @@ import ca.yorku.smartbudget.persistence.Storage;
 import ca.yorku.smartbudget.util.Validator;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
 
 public class TransactionServiceImpl implements TransactionService {
     private Storage storage;
@@ -61,7 +57,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         int idx = indexOfId(updatedTx.getId());
         if (idx == -1) {
-            throw new IllegalArgumentException("Transaction with ID " + updatedTx.getId() + " not found.");
+            throw new NoSuchElementException("Transaction with ID " + updatedTx.getId() + " not found.");
         }
 
         cache.set(idx, updatedTx);
@@ -75,7 +71,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         int idx = indexOfId(id);
         if (idx == -1) {
-            throw new IllegalArgumentException("Transaction with ID " + id + " not found.");
+            throw new NoSuchElementException("Transaction with ID " + id + " not found.");
         }
 
         cache.remove(idx);
@@ -88,7 +84,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         int idx = indexOfId(id);
         if (idx == -1) {
-            throw new IllegalArgumentException("Transaction with ID " + id + " not found.");
+            throw new NoSuchElementException("Transaction with ID " + id + " not found.");
         }
 
         return cache.get(idx);
